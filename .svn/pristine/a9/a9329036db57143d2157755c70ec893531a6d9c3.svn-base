@@ -1,0 +1,43 @@
+package cn.smbms.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import cn.smbms.dao.RoleMapper;
+import cn.smbms.entity.Role;
+import cn.smbms.service.RoleService;
+
+@Service("roleService")
+public class RoleServiceImpl implements RoleService {
+
+	@Resource
+	private RoleMapper roleMapper;
+
+	@Override
+	public List<Role> queryAll() {
+		return roleMapper.queryAll();
+	}
+
+	@Override
+	public int addRole(Role role) {
+		return roleMapper.addRole(role);
+	}
+
+	@Override
+	public int updateRole(Role role) {
+		return roleMapper.updateRole(role);
+	}
+
+	@Override
+	public int deleteRole(Integer id) {
+		return roleMapper.deleteRole(id);
+	}
+
+	@Override
+	public Role getRoleById(Integer id) {
+		return roleMapper.getRoleById(id);
+	}
+}

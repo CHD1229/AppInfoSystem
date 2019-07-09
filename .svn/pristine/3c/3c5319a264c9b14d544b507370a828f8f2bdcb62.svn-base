@@ -1,0 +1,143 @@
+package cn.smbms.controller;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import cn.smbms.entity.Page;
+import cn.smbms.entity.Provider;
+import cn.smbms.entity.Role;
+import cn.smbms.entity.User;
+import cn.smbms.service.ProviderService;
+
+@Controller
+@RequestMapping("/provider")
+public class ProviderController {
+	@Resource
+	private ProviderService providerService;
+
+	@RequestMapping("/toViewProvider/{proId}")
+	public String viewProvider(@PathVariable Integer proId, Model model) {
+		Provider provider = providerService.getProviderById(proId);
+		model.addAttribute("provider", provider);
+		return "providerview";
+	}
+	@RequestMapping("/queryProviderById")
+	public String queryById(@RequestParam("proid")Integer proId,Model model){
+		Provider provider =providerService.getProviderById(proId);
+		model.addAttribute("provider",provider);
+		return "providermodify";
+	}
+	@RequestMapping(value="/saveUpdateProvider",method=RequestMethod.POST)
+	public String saveUpdateUser(Provider provider,HttpServletRequest request) {
+		User loginUser = (User) request.getSession().getAttribute("userSession");
+		provider.setModifyBy(loginUser.getId());
+		provider.setModifyDate(new Date());
+		int num =providerService.updateProvider(provider);
+		if (num >0) {
+			return "redirect:/provider/providerList";
+		}else {
+			return "redirect:/provider/queryProviderById?proid="+provider.getId();
+		}
+	}
+	
+	@RequestMapping(value = "/providerList", method = RequestMethod.GET)
+	public String list(@RequestParam(value = "queryProCode", required = false) String proCode,
+			@RequestParam(value = "queryProName", required = false) String proName,
+			@RequestParam(value = "pageIndex", required = false, defaultValue = "1") Integer pageIndex, Model model) {
+		// 调用Service层得 到总记录数
+		int totalCount = providerService.queryTotalCount(proCode, proName);
+		// 2、封装Page实体类，并计算总的页数
+		/*
+		 * Page page = new Page(); page.setCurrPageNo(pageIndex); //当前页码
+		 * page.setPageSize(5); page.setTotalCount(totalCount);
+		 * //总的记录数，为总记录数赋值后，也完成了对总的页数的计算
+		 */
+		Page page = new Page();
+		page.setPageSize(5);
+		page.setCurrPageNo(pageIndex); // 当前页码
+		page.setTotalCount(totalCount); // 总的记录数，为总记录数赋值后，也完成了对总的页数的计算
+		if (pageIndex > page.getTotalPageCount()) {
+			pageIndex = page.getTotalPageCount();
+		}
+		page.setCurrPageNo(pageIndex); // 当前页码
+
+		// 3、计算分页所需要的起始位置偏移量 = (当前页码 - 1) * 每页显示的数据行数
+		int startPos = (page.getCurrPageNo() - 1) * page.getPageSize();
+		// 4、调用Service层分页查询用户列表信息
+		List<Provider> list = providerService.getProviderList(proCode, proName, startPos, page.getPageSize());
+
+		// 5、将相关数据保存到Model对象中
+		model.addAttribute("page", page); // 将Page对象保存到Model对象中
+		model.addAttribute("list", list);
+		// 将所有的查询条件保存到Model中
+		model.addAttribute("proCode", proCode); // 回显
+		model.addAttribute("proName", proName);
+		// 6、返回逻辑视图名，完成页面跳转
+		return "providerlist";
+	}
+
+	@RequestMapping(value = "/toProviderAdd", method = RequestMethod.GET)
+	public String userInfoAdd() {
+		return "provideradd"; // 跳转到带有Spring标签的新增页面
+	}
+
+	@RequestMapping(value = "/addProvider", method = RequestMethod.POST)
+	public String addProvider(Provider provider, HttpServletRequest request) {
+		User loginUser = (User) request.getSession().getAttribute("userSession");
+		provider.setCreatedBy(loginUser.getId()); // 创建者id
+		provider.setCreationDate(new Date());
+		int num = providerService.add(provider);
+		if (num > 0) {
+			return "redirect:/provider/providerList";
+		} else {
+			return "redirect:/provider/toProviderAdd";
+		}
+	}
+	@RequestMapping(value="/delProvider/{proId}",method = RequestMethod.GET)
+	@ResponseBody  //只要加了这个注解，当前方法返回的数据才会被输出到响应流中
+	public Object delBill(@PathVariable Integer proId) {
+		Provider provider =providerService.getProviderById(proId); 
+		Map<String, String> resultMap = new HashMap<String, String>();
+		if (provider == null) {
+			resultMap.put("delResult","notexist");  //订单不存在
+		} else {
+			int result =providerService.deleteProvider(proId);
+			if (result > 0) {
+				resultMap.put("delResult","true"); //删除成功
+			} else {
+				resultMap.put("delResult","false"); //删除失败
+			}
+		}
+		return resultMap;
+	}
+	/*
+	 * //负责保存供应商新增的操作
+	 * 
+	 * @RequestMapping(value = "/providerAdd", method = RequestMethod.POST) public
+	 * String userInfoAdd(@Valid User user, HttpServletRequest request) { User
+	 * loginUser = (User)request.getSession().getAttribute("userSession");
+	 * 
+	 * user.setCreatedBy(loginUser.getId()); //为User对象中创建者ID赋值，创建者ID为当前登录用户的ID
+	 * user.setCreationDate(new Date()); //以当前时间作为本次新增用户的时间 int result =
+	 * providerService.add(provider); //调用service层的新增方法 if (result > 0) { return
+	 * "redirect:/user/list"; //新增用户成功，跳转到用户列表。 } else { return
+	 * "redirect:/user/userInfoAdd"; //新增失败，跳回用户添加页面 } }
+	 */
+}

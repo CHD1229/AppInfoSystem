@@ -1,0 +1,19 @@
+package cn.smbms.dao;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import cn.smbms.entity.Role;
+
+public interface RoleMapper {
+	List<Role> queryAll(); //查询所有的用户角色
+	
+	int addRole(Role role);  //添加用户角色信息
+	
+	Role getRoleById(@Param("id")Integer id);  //根据id查询用户角色信息
+	
+	int updateRole(Role role); //修改用户角色信息
+	
+	int deleteRole(@Param("id")Integer id);  //删除用户角色信息
+}

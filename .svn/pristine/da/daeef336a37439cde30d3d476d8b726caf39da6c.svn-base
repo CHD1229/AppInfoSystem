@@ -1,0 +1,6 @@
+package cn.smbms.constants;
+
+public class Constants {
+	//登录成功后，将用户对象保存到session中，key为USER_SESSION
+	public static final String USER_SESSION = "userSession";
+}

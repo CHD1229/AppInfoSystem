@@ -1,0 +1,50 @@
+package cn.smbms.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import cn.smbms.dao.BillMapper;
+import cn.smbms.dao.ProviderMapper;
+import cn.smbms.entity.Bill;
+import cn.smbms.service.BillService;
+
+@Service("billService")
+public class BillServiceImpl implements BillService {
+	@Resource
+	private BillMapper billMapper;
+
+	@Override
+	public List<Bill> queryBillListPage(String productName, Integer providerId, Integer isPayment, Integer from,
+			Integer pageSize) {
+		return billMapper.queryBillListPage(productName, providerId, isPayment, from, pageSize);
+	}
+
+	@Override
+	public int queryTotalCount(String productName, Integer providerId, Integer isPayment) {
+		return billMapper.queryTotalCount(productName, providerId, isPayment);
+	}
+
+	@Override
+	public int addBill(Bill bill) {
+		return billMapper.addBill(bill);
+	}
+
+	@Override
+	public int updateBill(Bill bill) {
+		return billMapper.updateBill(bill);
+	}
+
+	@Override
+	public Bill getBillById(Integer id) {
+		return billMapper.getBillById(id);
+	}
+
+	@Override
+	public int deleteBill(Integer id) {
+		return billMapper.deleteBill(id);
+	}
+
+}

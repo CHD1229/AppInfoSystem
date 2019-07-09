@@ -1,0 +1,43 @@
+package cn.smbms.service;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import cn.smbms.entity.Provider;
+
+public interface ProviderService {
+	/**
+	 * 查询所有供应商列表
+	 * @param proCode 供应商编码
+	 * @param proName 供应商名称
+	 * @return
+	 */
+	public List<Provider> getProviderList(@Param("proCode")String proCode,@Param("proName")String proName,@Param("from") Integer from,
+			@Param("pageSize") Integer pageSize);
+	/**
+	 * 根据供应商编码模糊查询和供应商名称模糊查询供应商总纪录数。
+	 * @param proCode 用户名
+	 * @param proName 用户角色ID
+	 * @return 总记录数
+	 */
+	public int queryTotalCount(String proCode, String proName);
+	
+	public int add(Provider provider);
+	/**
+	 * 根据供应商id查询供应商信息
+	 */
+	public Provider getProviderById(Integer proId);
+	/**
+	 * 修改供应商信息
+	 */
+	public int updateProvider(Provider provider);
+	/**
+	 * 查询所有供应商信息
+	 */
+	List<Provider> queryAll(); 
+	/**
+	 * 删除供应商信息
+	 */
+	public int deleteProvider(Integer id);
+}

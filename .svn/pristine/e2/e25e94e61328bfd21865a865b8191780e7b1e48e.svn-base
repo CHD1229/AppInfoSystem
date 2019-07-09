@@ -1,0 +1,52 @@
+package cn.smbms.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import cn.smbms.dao.ProviderMapper;
+import cn.smbms.entity.Provider;
+import cn.smbms.service.ProviderService;
+@Service("providerService")
+public class ProviderServiceImpl implements ProviderService{
+	@Resource
+	private ProviderMapper providerMapper;
+	
+	@Override
+	public int queryTotalCount(String proCode, String proName) {
+		return providerMapper.queryTotalCount(proCode, proName);
+	}
+
+	@Override
+	public List<Provider> getProviderList(String proCode, String proName, Integer from, Integer pageSize) {
+		return providerMapper.getProviderList(proCode, proName, from, pageSize);
+	}
+
+	@Override
+	public int add(Provider provider) {
+		return providerMapper.add(provider);
+	}
+
+	@Override
+	public Provider getProviderById(Integer proId) {
+		return providerMapper.getProviderById(proId);
+	}
+
+	@Override
+	public int updateProvider(Provider provider) {
+		return providerMapper.updateProvider(provider);
+	}
+
+	@Override
+	public List<Provider> queryAll() {
+		return providerMapper.queryAll();
+	}
+
+	@Override
+	public int deleteProvider(Integer id) {
+		return providerMapper.deleteProvider(id);
+	}
+
+}

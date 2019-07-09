@@ -1,0 +1,47 @@
+package cn.smbms.dao;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import cn.smbms.entity.Provider;
+
+public interface ProviderMapper {
+	/**
+	 * 分页查询所有供应商列表
+	 * @param proCode 供应商编码
+	 * @param proName 供应商名称
+	 * @return
+	 */
+	public List<Provider> getProviderList(@Param("proCode")String proCode,@Param("proName")String proName,@Param("from") Integer from,
+			@Param("pageSize") Integer pageSize);
+	/**
+	 * 根据供应商编码模糊查询和供应商名称模糊查询供应商总纪录数。
+	 * @param proCode 供应商编码
+	 * @param proName 供应商名称
+	 * @return 总记录数
+	 */
+	public int queryTotalCount(@Param("proCode")String proCode,@Param("proName") String proName);
+	/**
+	 * 添加供应商
+	 * @return
+	 */
+	public int add(Provider provider);
+	/**
+	 * 根据供应商id查询供应商信息
+	 */
+	public Provider getProviderById(@Param("proId")Integer proId);
+	/**
+	 * 修改供应商信息
+	 */
+	public int updateProvider(Provider provider);
+	/**
+	 * 查询所有供应商信息
+	 */
+	public List<Provider> queryAll(); 
+	/**
+	 * 删除供应商信息
+	 */
+	public int deleteProvider(@Param("id")Integer id);
+}
+

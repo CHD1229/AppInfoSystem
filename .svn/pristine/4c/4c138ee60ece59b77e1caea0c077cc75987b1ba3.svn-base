@@ -1,0 +1,62 @@
+var roleObj;
+
+//供应商管理页面上点击删除按钮弹出删除框(providerlist.jsp)
+function deleteProvider(obj){
+	$.ajax({
+		type:"GET",
+		url : path + "/role/delRole/" + obj.attr("roleid"),
+		dataType:"json",
+		success:function(data){
+			if(data.delResult == "true"){//删除成功：移除删除行
+				cancleBtn();
+				obj.parents("tr").remove();
+			}else if(data.delResult == "false"){//删除失败
+				changeDLGContent("对不起，删除角色【"+obj.attr("rolename")+"】失败");
+			}else if(data.delResult == "notexist"){
+				changeDLGContent("对不起，角色【"+obj.attr("rolename")+"】不存在");
+			}else{
+				changeDLGContent("对不起，该角色【"+obj.attr("rolename")+"】下有【"+data.delResult+"】条订单，不能删除");
+			}
+		},
+		error:function(data){
+			changeDLGContent("删除成功");
+			window.location.href=path+"/role/roleList"
+		}
+	});
+}
+
+function openYesOrNoDLG(){
+	$('.zhezhao').css('display', 'block');
+	$('#removeProv').fadeIn();
+}
+
+function cancleBtn(){
+	$('.zhezhao').css('display', 'none');
+	$('#removeProv').fadeOut();
+}
+function changeDLGContent(contentStr){
+	var p = $(".removeMain").find("p");
+	p.html(contentStr);
+}
+$(function(){
+	//修改
+	$(".modifyRole").on("click",function(){
+		var obj = $(this);
+		window.location.href=path+"/role/roleModify?id="+ obj.attr("roleid");
+	});
+
+	//取消
+	$('#no').click(function () {
+		cancleBtn();
+	});
+	//删除
+	$('#yes').click(function () {
+		deleteProvider(roleObj);
+	});
+
+	$(".deleteRole").on("click",function(){
+		roleObj = $(this);
+		changeDLGContent("你确定要删除角色【"+roleObj.attr("rolename")+"】吗？");
+		openYesOrNoDLG();
+	});
+});

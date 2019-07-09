@@ -1,0 +1,62 @@
+package cn.smbms.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import cn.smbms.dao.UserMapper;
+import cn.smbms.entity.User;
+import cn.smbms.service.UserService;
+@Service("userService")
+public class UserServiceImpl implements UserService{
+	@Resource
+	private UserMapper userMapper;
+	
+	@Override
+	public User login(String userCode) {
+		return userMapper.queryByCodeAndPwd(userCode);
+	}
+
+	@Override
+	public int queryTotalCount(String userName, Integer roleId) {
+		return userMapper.queryTotalCount(userName, roleId);
+	}
+
+	@Override
+	public List<User> queryUserListPage(String userName, Integer roleId,
+			Integer from, Integer pageSize) {
+		return userMapper.queryUserListPage(userName, roleId, from, pageSize);
+	}
+
+	@Override
+	public int addUser(User user) {
+		return userMapper.addUser(user);
+	}
+
+	@Override
+	public User getUserById(Integer id) {
+		return userMapper.getUserById(id);
+	}
+
+	@Override
+	public int updateUser(User user) {
+		return userMapper.updateUser(user);
+	}
+
+	@Override
+	public User selectUserCodeExist(String userCode) {
+		return userMapper.selectUserCodeExist(userCode);
+	}
+
+	@Override
+	public int deleteUser(Integer id) {
+		return userMapper.deleteUser(id);
+	}
+
+	@Override
+	public int updatePwd(String pwd, Integer id) {
+		return userMapper.updatePwd(pwd, id);
+	}
+}

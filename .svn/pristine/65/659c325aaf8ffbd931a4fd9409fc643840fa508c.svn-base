@@ -1,0 +1,37 @@
+package cn.smbms.service;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import cn.smbms.entity.Bill;
+
+public interface BillService {
+	/**
+	 * 根据条件查询订单并分页
+	 */
+	public List<Bill> queryBillListPage(String productName, Integer providerId, Integer isPayment, Integer from,
+			Integer pageSize);
+
+	/**
+	 * 根据商品名称模糊查询和供应商 是否付款精确查询用户总纪录数。
+	 */
+	public int queryTotalCount(String productName, Integer providerId, Integer isPayment);
+	/**
+	 * 新增订单
+	 */
+	public int addBill(Bill bill);
+	/**
+	 * 修改订单
+	 */
+	public int updateBill(Bill bill);
+	/**
+	 * 根据id查询订单明细
+	 */
+	public Bill getBillById(@Param("id")Integer id);
+	/**
+	 * 删除订单
+	 */
+	public int deleteBill(@Param("id")Integer id);
+
+}

@@ -1,0 +1,232 @@
+package cn.smbms.controller;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alibaba.fastjson.JSONArray;
+import com.mysql.jdbc.StringUtils;
+
+import cn.smbms.entity.Page;
+import cn.smbms.entity.Role;
+import cn.smbms.entity.User;
+import cn.smbms.service.RoleService;
+import cn.smbms.service.UserService;
+
+@Controller
+@RequestMapping("/user")
+public class UserController {
+	public Logger logger =Logger.getLogger(UserController.class);
+	@Resource
+	private UserService userService;
+	@RequestMapping("/pwdModify")
+	public String pwdModify() {
+		return "pwdmodify";
+	}
+	//判断旧密码是否和新密码一致
+	@RequestMapping(value="/oldPwdNewPwd",method=RequestMethod.GET)
+	@ResponseBody
+	public Object oldPwdNewPwd(@RequestParam("oldpassword")String oldpassword,
+			HttpSession session) {
+		HashMap<String,String> resultMap =new HashMap<String,String>();
+		User loginUser=(User)session.getAttribute("userSession");
+		if (StringUtils.isNullOrEmpty(oldpassword)) {
+			resultMap.put("result", "error");
+		}else if (!loginUser.getUserPassword().equals(oldpassword)) {
+			resultMap.put("result", "false");
+		}else if (loginUser.getUserPassword().equals(oldpassword)) {
+			resultMap.put("result","true");
+		}
+		return JSONArray.toJSONString(resultMap);
+	}
+	/**
+	 * 修改密码
+	 */
+	@RequestMapping(value="/pwdModify",method=RequestMethod.POST)
+	public String pwdModify(@RequestParam("newpassword")String newpassword,HttpSession session) {
+		User loginUser=(User)session.getAttribute("userSession");
+		if (loginUser != null) {
+			int  num =userService.updatePwd(newpassword, loginUser.getId());
+			if (num >0) {
+				session.invalidate();
+				return "redirect:/user/toLogin";
+			}
+		}
+		return "redirect:/user/pwdModify";
+	}
+	//负责通过ID查询用户的详细信息，然后再跳转到用户修改页面
+	@RequestMapping("/queryById")
+	public String queryById(@RequestParam("id")Integer id,Model model){
+		User user =userService.getUserById(id);
+		List<Role> roleList = roleService.queryAll(); //查询所有的角色列表
+		model.addAttribute("roleList", roleList);  //用于在跳转到新增页面时，显示用户角色信息
+		model.addAttribute("user",user);
+		return "usermodify";
+	}
+	//保存修改的用户信息
+	@RequestMapping(value="/saveUpdateUser",method=RequestMethod.POST)
+	public String saveUpdateUser(User user,HttpSession session) {
+	User loginUser=(User)session.getAttribute("userSession");
+		user.setModifyBy(loginUser.getId());
+		user.setModifyDate(new Date());
+		int num =userService.updateUser(user);
+		if (num >0) {
+			return "redirect:/user/list";
+		}else {
+			return "redirect:/user/queryById?id="+user.getId();
+		}
+	}
+	@RequestMapping("/toLogin")
+	public String toLogin() {
+		return "login";
+	}
+	//跳到添加界面 
+	@RequestMapping("/toAdd")
+	public String toAdd(Model model) {
+		List<Role> roleList = roleService.queryAll(); //查询所有的角色列表
+		model.addAttribute("roleList", roleList);  //用于在跳转到新增页面时，显示用户角色信息
+		return "useradd";
+	}
+	//保存添加方法
+	@RequestMapping(value="/saveAdd",method=RequestMethod.POST)
+	public String saveAdd(@Valid User user,HttpServletRequest request) {
+		User loginUser =(User)request.getSession().getAttribute("userSession");
+		user.setCreatedBy(loginUser.getId());  //创建者id
+		user.setCreationDate(new Date());
+		int num =userService.addUser(user);
+		if (num >0) {
+			return "redirect:/user/list";
+		}else {
+			return "redirect:/user/toAdd";
+		}
+		
+	}
+	//负责处理登录请求
+		@RequestMapping(value = "/doLogin", method = RequestMethod.POST)
+		public String doLogin(@RequestParam("userCode") String userCode, 
+				@RequestParam("userPassword") String userPwd, HttpServletRequest request,HttpSession session) {
+			
+			User user = userService.login(userCode); //调用Service层实现登录
+			if (user == null) {
+				//用户名不存在
+				throw new RuntimeException("用户名不存在");  //手动抛出运行时异常
+			} else if (!userPwd.equals(user.getUserPassword())) {
+				throw new RuntimeException("密码输入错误！");
+			} else {
+				//登录成功后，将用户名保存到Session作用域中。
+	
+				request.getSession().setAttribute("userSession", user);
+				return "redirect:/user/main";  //redirect: 重定向
+			}
+			/*User user = userService.login(userCode, userPwd); //调用Service层实现登录
+			if (user != null) {  //登录成功
+				//登录成功后，将用户名保存到Session作用域中。
+				request.getSession().setAttribute("userSession", user);
+				return "redirect:/user/main";  //redirect: 重定向
+			} else {
+				throw new NullPointerException("程序向你抛出一个异常,用户名或密码不存在");
+				//return "login";  //登录失败时，跳回登录页面继续登录
+			}*/
+		}
+		
+		@RequestMapping("/main")
+		public String toMain() {
+			return "frame";
+		}
+		@Resource
+		private RoleService roleService;
+		/**
+		 * 用于分页查询用户列表页面
+		 * @param queryname 接收从userlist.jsp页面传递过来用户名
+		 * @param queryUserRole 接收从userlist.jsp页面传递过来用户角色ID
+		 * @param pageIndex 接收从userlist.jsp页面传递过来当前页码
+		 * @param model 用来保存Model数据
+		 * @return 返回分页查询用户列表信息
+		 */
+		@RequestMapping(value = "/list", method = RequestMethod.GET)
+		public String list(
+				@RequestParam(value = "queryname", required = false) String queryname,
+				@RequestParam(value = "queryUserRole", required = false) Integer queryUserRole,
+				@RequestParam(value = "pageIndex", required = false, defaultValue = "1") Integer pageIndex, Model model) {
+			
+			//1、调用Service层得 到总记录数
+			int totalCount = userService.queryTotalCount(queryname, queryUserRole);
+			//2、封装Page实体类，并计算总的页数
+			Page page = new Page();
+			page.setCurrPageNo(pageIndex);  //当前页码 
+			page.setPageSize(5);
+			page.setTotalCount(totalCount);  //总的记录数，为总记录数赋值后，也完成了对总的页数的计算
+			//3、计算分页所需要的起始位置偏移量 = (当前页码 - 1) * 每页显示的数据行数
+			int startPos = (page.getCurrPageNo() - 1) * page.getPageSize();
+			//4、调用Service层分页查询用户列表信息
+			List<User> list = userService.queryUserListPage(queryname, queryUserRole, startPos,  page.getPageSize());
+			List<Role> roleList = roleService.queryAll(); //查询所有的角色列表
+			//5、将相关数据保存到Model对象中
+			model.addAttribute("page", page);  //将Page对象保存到Model对象中
+			model.addAttribute("list", list);
+			model.addAttribute("roleList", roleList);
+			//将所有的查询条件保存到Model中
+			model.addAttribute("queryname", queryname); //回显
+			model.addAttribute("queryUserRole", queryUserRole);
+			//6、返回逻辑视图名，完成页面跳转
+			return "userlist";
+		}
+		@RequestMapping(value="ucExist",method = RequestMethod.GET)
+		@ResponseBody  //@ResponseBody 当前方法返回的数据会被输出响应流中(当前方法返回的值会被输出页面上去)
+		public String userCodeIsExist(@RequestParam("userCode")String userCode) {
+			logger.debug("userCodeIsExist  usercode:" + userCode);
+			Map<String, Object> resultMap = new HashMap<String,Object>();
+			if (StringUtils.isNullOrEmpty(userCode)) { //org.springframework.util.StringUtils
+				resultMap.put("userCode", "exist");
+			} else {
+				User user = userService.selectUserCodeExist(userCode);
+				if (user != null) {
+					resultMap.put("userCode", "exist");
+				} else {
+					resultMap.put("userCode", "noexist");
+				}
+			}
+			return JSONArray.toJSONString(resultMap);
+		}
+
+		//根据id步骤获取用户信息
+		@RequestMapping(value = "/view", method = RequestMethod.GET,produces = { "application/json;charset=UTF-8" })
+	    @ResponseBody
+		public String view(@RequestParam("id") Integer id) {
+			logger.debug("view id:" + id);
+			User user = userService.getUserById(id); 
+			return JSONArray.toJSONString(user);
+		}
+		@RequestMapping(value="/delUser/{id}",method = RequestMethod.GET)
+		@ResponseBody  //只要加了这个注解，当前方法返回的数据才会被输出到响应流中
+		public Object delBill(@PathVariable Integer id) {
+			User user = userService.getUserById(id);
+			Map<String, String> resultMap = new HashMap<String, String>();
+			if (user == null) {
+				resultMap.put("delResult","notexist");  //订单不存在
+			} else {
+				int result =userService.deleteUser(id);
+				if (result > 0) {
+					resultMap.put("delResult","true"); //删除成功
+				} else {
+					resultMap.put("delResult","false"); //删除失败
+				}
+			}
+			return resultMap;
+		}
+}

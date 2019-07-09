@@ -1,0 +1,78 @@
+package cn.smbms.dao;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import cn.smbms.entity.User;
+
+public interface UserMapper {
+	/**
+	 * 通过用户名和密码查询指定用户信息
+	 * 
+	 * @param userCode
+	 *            用户编码
+	 * @param userPassword
+	 *            用户密码
+	 * @return
+	 */
+	/*
+	 * User queryByCodeAndPwd(
+	 * 
+	 * @Param("userCode")String userCode,
+	 * 
+	 * @Param("userPassword")String userPassword);
+	 */
+	User queryByCodeAndPwd(@Param("userCode") String userCode);
+
+	/**
+	 * 根据用户名模糊查询和用户角色ID精确查询用户总纪录数。
+	 * 
+	 * @param userCode
+	 *            用户名
+	 * @param roleId
+	 *            用户角色ID
+	 * @return 总记录数
+	 */
+	int queryTotalCount(@Param("userName") String userName, @Param("roleId") Integer roleId);
+
+	/**
+	 * 根据用户名模糊查询和用户角色ID精确查询用户分页列表信息
+	 * 
+	 * @param userName
+	 *            用户名
+	 * @param roleId
+	 *            角色ID
+	 * @param from
+	 *            起始位置偏移量
+	 * @param pageSize
+	 *            每页显示的数据行数
+	 */
+	List<User> queryUserListPage(@Param("userName") String userName, @Param("roleId") Integer roleId,
+			@Param("from") Integer from, @Param("pageSize") Integer pageSize);
+	/**
+	 * 添加用户信息
+	 * @param user
+	 * @return
+	 */
+	int addUser(User user);
+	/**
+	 * 根据id查询用户信息
+	 * @param id
+	 * @return
+	 */
+	User getUserById(@Param("id")Integer id);
+	/**
+	 * 修改用户信息
+	 */
+	int updateUser(User user);
+	/**
+	 * 删除用户信息
+	 */
+	public int deleteUser(@Param("id")Integer id);
+	 // 通过userCode获取User对象
+	 User selectUserCodeExist(@Param("userCode")String userCode);
+	 
+	 int updatePwd(@Param("pwd")String pwd,@Param("id")Integer id);
+
+}

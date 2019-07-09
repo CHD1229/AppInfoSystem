@@ -1,0 +1,146 @@
+package cn.smbms.controller;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.catalina.tribes.util.StringManager;
+import org.springframework.http.HttpRequest;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alibaba.fastjson.JSONArray;
+import com.sun.xml.internal.fastinfoset.algorithm.LongEncodingAlgorithm;
+
+import cn.smbms.entity.Bill;
+import cn.smbms.entity.Page;
+import cn.smbms.entity.Provider;
+import cn.smbms.entity.Role;
+import cn.smbms.entity.User;
+import cn.smbms.service.BillService;
+import cn.smbms.service.ProviderService;
+import cn.smbms.service.RoleService;
+
+@Controller
+@RequestMapping("/bill")
+public class BillController {
+	@Resource
+	private BillService billService;
+	@Resource
+	private ProviderService providerService;
+
+	@RequestMapping(value = "/billList", method = RequestMethod.GET)
+	public String list(@RequestParam(value = "queryProductName", required = false) String productName,
+			@RequestParam(value = "queryProviderId", required = false) Integer providerId,
+			@RequestParam(value = "queryIsPayment", required = false) Integer isPayment,
+			@RequestParam(value = "pageIndex", required = false, defaultValue = "1") Integer pageIndex, Model model) {
+		// 调用Service层得 到总记录数
+		int totalCount = billService.queryTotalCount(productName, providerId, isPayment);
+		Page page = new Page();
+		page.setPageSize(5);
+		page.setCurrPageNo(pageIndex); // 当前页码
+		page.setTotalCount(totalCount); // 总的记录数，为总记录数赋值后，也完成了对总的页数的计算
+		if (pageIndex > page.getTotalPageCount()) {
+			pageIndex = page.getTotalPageCount();
+		}
+		page.setCurrPageNo(pageIndex); // 当前页码
+
+		// 3、计算分页所需要的起始位置偏移量 = (当前页码 - 1) * 每页显示的数据行数
+		int startPos = (page.getCurrPageNo() - 1) * page.getPageSize();
+		// 4、调用Service层分页查询用户列表信息
+		List<Bill> list = billService.queryBillListPage(productName, providerId, isPayment, startPos,
+				page.getPageSize());
+		List<Provider> providerList = providerService.queryAll(); // 查询所有的供应商列表
+		model.addAttribute("providerList", providerList);
+		// 5、将相关数据保存到Model对象中
+		model.addAttribute("page", page); // 将Page对象保存到Model对象中
+		model.addAttribute("billList", list);
+		// 将所有的查询条件保存到Model中
+		model.addAttribute("productName", productName); // 回显
+		model.addAttribute("providerId", providerId);
+		model.addAttribute("isPayment", isPayment);
+		// 6、返回逻辑视图名，完成页面跳转
+		return "billlist";
+	}
+
+	@RequestMapping("/billAdd")
+	public String billAdd() {
+		return "billadd";
+	}
+
+	/* 通过Ajax异步获取供应商列表 */
+	@RequestMapping(value = "/getProviderList", method = RequestMethod.GET,produces= {"application/json;charset=UTF-8"})
+	@ResponseBody
+	public Object getProviderList() {
+		List<Provider> providerList = providerService.queryAll();
+		return JSONArray.toJSONString(providerList); // 会自动将List泛型转换成JSON对象数组
+	}
+
+	// 新增
+	@RequestMapping("/billAddSave")
+	public String billAddSave(Bill bill, HttpServletRequest request) {
+		User loginUser = (User) request.getSession().getAttribute("userSession");
+		bill.setCreatedBy(loginUser.getId());
+		bill.setCreationDate(new Date());
+		int num = billService.addBill(bill);
+		if (num > 0) {
+			return "redirect:/bill/billList";
+		} else {
+			return "redirect:/bill/billAdd";
+		}
+	}
+	//通过id查询订单详情并跳转到修改页面，在修改页面显示订单详情信息
+		@RequestMapping("/queryBillById/{id}")
+		public String queryBillById(@PathVariable Integer id,Model model) {
+			Bill bill = billService.getBillById(id);
+			model.addAttribute("bill",bill);
+			return "billmodify";
+		}
+		
+		//修改保存
+		@RequestMapping("/billModifySave")
+		public String billModifySave(Bill bill, HttpServletRequest request) {
+			User loginUser = (User) request.getSession().getAttribute("userSession");
+			bill.setModifyBy(loginUser.getId());
+			bill.setModifyDate(new Date());
+			int num = billService.updateBill(bill);
+			if (num > 0) {  //修改成功
+				return "redirect:/bill/billList";
+			} else {
+				return "redirect:/bill/queryBillById/" + bill.getId();
+			}
+		}
+		@RequestMapping("/viewBillById/{id}")
+		public String viewBillById(@PathVariable Integer id,Model model) {
+			Bill bill = billService.getBillById(id);
+			model.addAttribute("bill",bill);
+			return "billview";
+		}
+		@RequestMapping(value="/delBill/{id}",method = RequestMethod.GET)
+		@ResponseBody  //只要加了这个注解，当前方法返回的数据才会被输出到响应流中
+		public Object delBill(@PathVariable Integer id) {
+			Bill bill = billService.getBillById(id);
+			Map<String, String> resultMap = new HashMap<String, String>();
+			if (bill == null) {
+				resultMap.put("delResult","notexist");  //订单不存在
+			} else {
+				int result = billService.deleteBill(id);
+				if (result > 0) {
+					resultMap.put("delResult","true"); //删除成功
+				} else {
+					resultMap.put("delResult","false"); //删除失败
+				}
+			}
+			return resultMap;
+		}
+}

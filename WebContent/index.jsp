@@ -21,7 +21,7 @@
     <link href="https://colorlib.com/polygon/gentelella/css/animate.min.css" rel="stylesheet">
 
     <!-- Custom Theme Style -->
-    <link href="${pageContext.request.contextPath }/statics/css/custom.min.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/statics/css/custom.min.css" rel="stylesheet">
   </head>
 
   <body class="login">
@@ -31,7 +31,7 @@
       <a href="manager/login" class="btn btn-link">后台管理系统 入口</a>
       </div>
       <div>
-      <a href="dev/login/login" class="btn btn-link">开发者平台 入口</a>
+      <a href="${pageContext.request.contextPath }/dev/login/login" class="btn btn-link">开发者平台 入口</a>
       </div>
     </div>
   </body>

@@ -11,7 +11,7 @@ import cn.appsys.tools.Constant;
 public class SysInterceptor extends HandlerInterceptorAdapter {
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
-		DevUser devUser = (DevUser)request.getSession().getAttribute(Constant.USER_EXCEPTION);
+		DevUser devUser = (DevUser)request.getSession().getAttribute(Constant.DEV_USER_SESSION);
 		if (null==devUser) {
 			response.sendRedirect(request.getContextPath()+"/403.jsp");
 			return false;
